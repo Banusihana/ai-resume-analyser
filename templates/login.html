@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign In — Resume Analyser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 32L28 12L32 16L12 36L6 37L8 32Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M23 17L27 21" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        <span>Resume&nbsp;Analyser</span>
+      </div>
+      <span class="masthead-tag">EST. FOR THIS HACKATHON</span>
+    </div>
+  </header>
+
+  <main class="login-wrapper">
+    <div class="login-card">
+      <div class="login-header">
+        <p class="eyebrow">Desk Access</p>
+        <h1>Welcome Back</h1>
+        <p class="lede">Please enter your name and email address to log into the Applicant Copy Desk.</p>
+      </div>
+
+      {% if error %}
+      <div class="error-banner">{{ error }}</div>
+      {% endif %}
+
+      <form action="{{ url_for('login') }}" method="POST" class="login-form">
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" name="name" placeholder="e.g. Jane Doe" required autocomplete="name" />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" placeholder="e.g. jane@example.com" required autocomplete="email" />
+        </div>
+
+        <button type="submit" class="login-btn">Log In to Desk</button>
+      </form>
+      
+      <p class="privacy-note">Your log-in details are saved locally to standard Excel records (user_logins.xlsx).</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>Built for a 5-hour hackathon sprint — heuristic analysis, runs fully offline.</p>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,24 @@
+# Python / Pycache
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Sensitive key & credentials files
+serviceAccountKey.json
+*.pem
+*.key
+*.env
+.env
+
+# User data / logs
+user_logins.csv
+user_logins.xlsx
+*.log
+
+# IDE & System files
+.vscode/
+.idea/
+.DS_Store

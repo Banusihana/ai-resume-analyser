@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Resume Intelligence Platform — Find the flops before the recruiter does</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 32L28 12L32 16L12 36L6 37L8 32Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M23 17L27 21" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        <span>Resume&nbsp;Intelligence</span>
+      </div>
+      <div class="user-meta">
+        <span class="user-badge">Logged in as <strong>{{ session.get('user_name', 'User') }}</strong></span>
+        <a href="{{ url_for('export_report') }}" class="export-btn" id="export-pdf-link" title="Download Diagnostic PDF Report">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 15V3m0 12l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Export Diagnostic Report
+        </a>
+        <a href="{{ url_for('export_anonymized_resume') }}" class="anon-btn" id="export-anon-link" title="Export Unbiased Anonymized Resume">
+          🔒 Export Anonymized PDF
+        </a>
+        <a href="{{ url_for('logout') }}" class="logout-link">Sign Out</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-text">
+        <p class="eyebrow">Vol. 5 — Ethical AI, Fact Validation &amp; Voice Mock Interview</p>
+        <h1>Every resume<br>has a flop.<br><em>Let's find yours</em><br>before the recruiter does.</h1>
+        <p class="lede">
+          Real-time ATS scoring, Name Verification guardrails, Ethical AI Bias Audits, Tech Timeline Fact-Checking, Interactive AI Voice Interviews, and Reverse Salary Estimations.
+        </p>
+      </div>
+
+      <div class="hero-upload">
+        <form id="upload-form">
+          <label id="dropzone" for="resume-input">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+              <path d="M12 3v12m0-12l-4 4m4-4l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round"/>
+            </svg>
+            <span class="dz-title">Drop resume here</span>
+            <span class="dz-sub">or click to browse — PDF, DOCX, or TXT</span>
+            <span class="dz-filename" id="dz-filename"></span>
+          </label>
+          <input type="file" id="resume-input" name="resume" accept=".pdf,.docx,.txt" hidden />
+          <button type="submit" id="analyze-btn">Scan &amp; Diagnose Resume</button>
+          <p class="privacy-note">Analysed locally on this server. Cloud synced to your database.</p>
+        </form>
+      </div>
+    </section>
+
+    <section id="loading" class="loading hidden">
+      <div class="pen-spinner"></div>
+      <p>Verifying candidate identity, conducting Ethical AI Audit &amp; checking tech timeline facts…</p>
+    </section>
+
+    <section id="error-banner" class="error-banner hidden"></section>
+
+    <section id="results" class="results hidden">
+
+      <!-- Name Mismatch Warning Container -->
+      <div id="name-mismatch-card" class="name-mismatch-box hidden">
+        <div class="mismatch-icon">⚠️</div>
+        <div class="mismatch-copy">
+          <h4>Name Mismatch Detected</h4>
+          <p id="name-mismatch-text">—</p>
+        </div>
+      </div>
+
+      <!-- Judge Pitch Banner -->
+      <div class="judge-pitch-banner">
+        <div class="pitch-badge">🏆 HACKATHON JUDGE-BAIT FEATURES</div>
+        <div class="pitch-pills">
+          <span class="pitch-pill">⚖️ Ethical AI Fairness Audit</span>
+          <span class="pitch-pill">🛡️ Impossible Fact Hallucination Validator</span>
+          <span class="pitch-pill">🎙️ Interactive Voice Mock Interviewer</span>
+          <span class="pitch-pill">💰 Reverse Market Salary Predictor</span>
+          <span class="pitch-pill">🎨 Visual Whitespace &amp; Layout Inspector</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="dashboard-tabs">
+        <button class="tab-btn active" data-tab="tab-verdict">📋 Copy Desk Verdict</button>
+        <button class="tab-btn" data-tab="tab-bias">⚖️ Ethical Bias &amp; Fairness</button>
+        <button class="tab-btn" data-tab="tab-facts">🛡️ Fact &amp; Anomaly Validator</button>
+        <button class="tab-btn" data-tab="tab-voice">🎙️ AI Voice Mock Interview</button>
+        <button class="tab-btn" data-tab="tab-salary">💰 Reverse Salary Estimator</button>
+        <button class="tab-btn" data-tab="tab-visual">🎨 Visual Layout Hierarchy</button>
+        <button class="tab-btn" data-tab="tab-courses">🎓 Skill Upgrade &amp; Courses</button>
+        <button class="tab-btn" data-tab="tab-jobs">💼 Hiring Portals</button>
+        <button class="tab-btn" data-tab="tab-jd-match">🎯 JD Match</button>
+        <button class="tab-btn" data-tab="tab-heatmap">👁️ 6-Sec Heatmap</button>
+        <button class="tab-btn" data-tab="tab-tailor">✍️ AI Bullet Tailor</button>
+        <button class="tab-btn" data-tab="tab-ats-raw">💻 ATS Raw Text</button>
+      </nav>
+
+      <!-- Tab 1: Verdict & Margin Notes -->
+      <div id="tab-verdict" class="tab-content active">
+        <div class="verdict">
+          <div class="stamp-wrap">
+            <div class="stamp" id="score-stamp">
+              <span class="stamp-score" id="score-value">--</span>
+              <span class="stamp-label" id="stamp-label">GRADE</span>
+            </div>
+          </div>
+          <div class="verdict-copy">
+            <p class="eyebrow">The Verdict</p>
+            <h2 id="verdict-headline">—</h2>
+            <div class="meta-pills">
+              <span class="pill"><strong id="word-count">0</strong> words</span>
+              <span class="pill"><strong id="issue-count">0</strong> margin flags</span>
+              <span class="pill pill-seniority" id="seniority-badge">Mid Level</span>
+              <span class="pill pill-ats" id="ats-score-pill">ATS Score: --%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="columns">
+          <div class="findings-col">
+            <h3 class="col-title">Margin Notes (Editor Markup)</h3>
+            <ol id="findings-list" class="findings-list"></ol>
+          </div>
+
+          <div class="strengths-col">
+            <h3 class="col-title">What's Working</h3>
+            <ul id="strengths-list" class="strengths-list"></ul>
+
+            <div class="rule-of-thumb">
+              <p class="eyebrow">Editor's Rule of Thumb</p>
+              <p>One quantified result beats three adjectives. If a bullet doesn't answer "so what happened?", rewrite it.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 9: Ethical Bias & Fairness Audit -->
+      <div id="tab-bias" class="tab-content">
+        <div class="bias-header">
+          <p class="eyebrow">Ethical AI &amp; Unbiased Screening</p>
+          <h3>Bias &amp; Fairness Audit Engine</h3>
+          <p class="section-sub">Scans resumes for inadvertent age, gender, location, or prestige institution markers to guarantee unbiased screening.</p>
+        </div>
+
+        <div class="bias-card">
+          <div class="bias-gauge-wrap">
+            <div class="bias-gauge">
+              <span class="bias-score-val" id="bias-score-val">--%</span>
+              <span class="bias-gauge-lbl">FAIRNESS</span>
+            </div>
+            <div class="bias-status">
+              <h4 id="bias-rating-text">Auditing...</h4>
+              <p>Anonymizing identifying markers increases blind ATS pass rates by +35%.</p>
+              <a href="{{ url_for('export_anonymized_resume') }}" class="export-btn" style="margin-top:8px; display:inline-block;">🔒 Download Anonymized Unbiased Resume PDF</a>
+            </div>
+          </div>
+
+          <h4 class="sub-head">Identified Bias Risk Markers</h4>
+          <div id="bias-flags-list" class="bias-flags-list"></div>
+        </div>
+      </div>
+
+      <!-- Tab 10: Resume Fact & Anomaly Validator -->
+      <div id="tab-facts" class="tab-content">
+        <div class="facts-header">
+          <p class="eyebrow">Anti-Hallucination Guardrails</p>
+          <h3>Resume Hallucination &amp; Fact Validator</h3>
+          <p class="section-sub">Protects against AI-generated fake resumes by verifying technology release timelines and work history overlaps.</p>
+        </div>
+
+        <div class="facts-card">
+          <div class="facts-gauge-wrap">
+            <div class="facts-gauge">
+              <span class="facts-score-val" id="facts-score-val">--%</span>
+              <span class="facts-gauge-lbl">CREDIBILITY</span>
+            </div>
+            <div class="facts-status">
+              <h4 id="facts-status-text">Validating Timelines...</h4>
+              <p>Ensures claimed technology experience years align with actual framework launch dates.</p>
+            </div>
+          </div>
+
+          <h4 class="sub-head">Timeline Anomaly &amp; Credibility Audit</h4>
+          <div id="facts-anomalies-list" class="facts-anomalies-list"></div>
+        </div>
+      </div>
+
+      <!-- Tab 11: AI Voice Mock Interviewer -->
+      <div id="tab-voice" class="tab-content">
+        <div class="voice-header">
+          <p class="eyebrow">Interactive Speech Synthesis &amp; AI Voice Agent</p>
+          <h3>Interactive AI Voice Mock Interviewer</h3>
+          <p class="section-sub">Dynamically conducts a 2-minute voice interview based on the specific weak points and flagged anomalies identified in your resume.</p>
+        </div>
+
+        <div class="voice-card">
+          <div class="voice-controls-bar">
+            <div class="voice-select-group">
+              <label for="voice-agent-select">Select AI Recruiter Persona:</label>
+              <select id="voice-agent-select" class="voice-select">
+                <option value="default">AI Senior Tech Recruiter (Neural TTS)</option>
+                <option value="executive">Engineering VP (Strict &amp; Direct)</option>
+                <option value="friendly">Talent Acquisition Lead (Friendly)</option>
+              </select>
+            </div>
+            
+            <div class="voice-actions">
+              <button id="start-voice-interview-btn" class="voice-play-btn">▶️ Start 2-Min Voice Interview</button>
+              <button id="stop-voice-interview-btn" class="voice-stop-btn hidden">⏹️ Stop Interview</button>
+            </div>
+          </div>
+
+          <!-- Animated Audio Waveform Visualizer -->
+          <div id="voice-waveform-wrap" class="waveform-wrap hidden">
+            <div class="waveform-bar bar1"></div>
+            <div class="waveform-bar bar2"></div>
+            <div class="waveform-bar bar3"></div>
+            <div class="waveform-bar bar4"></div>
+            <div class="waveform-bar bar5"></div>
+            <div class="waveform-bar bar4"></div>
+            <div class="waveform-bar bar3"></div>
+            <div class="waveform-bar bar2"></div>
+            <span class="voice-speaking-tag" id="voice-speaking-lbl">🎙️ AI Recruiter Speaking...</span>
+          </div>
+
+          <div id="voice-status-banner" class="voice-status-banner">Press Start to launch your personalized AI Voice Interview based on your resume weak points.</div>
+          
+          <div class="voice-interactive-stage">
+            <div class="voice-prompter-box">
+              <span class="prompter-lbl">CURRENT INTERVIEW QUESTION:</span>
+              <h4 id="voice-active-question">Click "Start 2-Min Voice Interview" to generate customized questions.</h4>
+              <p id="voice-active-tip" class="voice-tip">💡 Tip: Speak clearly into your microphone when responding.</p>
+            </div>
+
+            <div class="mic-response-box margin-top-16">
+              <div class="mic-controls">
+                <button id="voice-mic-btn" class="mic-btn">🎤 Speak Answer (Live Mic Recording)</button>
+                <span id="mic-status-tag" class="mic-status">Mic Idle</span>
+              </div>
+              <div class="transcript-box" id="voice-transcript-text">Your spoken answer will be transcribed here in real-time...</div>
+            </div>
+
+            <div id="voice-ai-feedback-box" class="feedback-card hidden">
+              <div class="feedback-head">
+                <span class="fb-score-tag" id="voice-answer-score">90 / 100</span>
+                <h4>AI Real-Time Candidate Feedback</h4>
+              </div>
+              <p id="voice-answer-feedback-text">Your response effectively addressed the question using STAR methodology.</p>
+            </div>
+          </div>
+
+          <h4 class="sub-head margin-top-24">Generated Weak-Point Interview Prompts</h4>
+          <div id="voice-questions-container" class="voice-questions-container margin-top-12"></div>
+        </div>
+      </div>
+
+      <!-- Tab 12: Reverse Salary Predictor -->
+      <div id="tab-salary" class="tab-content">
+        <div class="salary-header">
+          <p class="eyebrow">Compensation Market Analytics</p>
+          <h3>Reverse Salary &amp; Market Value Predictor</h3>
+          <p class="section-sub">Estimates candidate market value based on parsed technical skills, experience depth, and target location.</p>
+        </div>
+
+        <div class="salary-card">
+          <div class="location-select-bar">
+            <label for="salary-location-select">Target Hiring Market / Location:</label>
+            <select id="salary-location-select" class="location-select">
+              <option value="us_sf" selected>🇺🇸 San Francisco / Silicon Valley (Tier 1 US)</option>
+              <option value="us_ny">🇺🇸 New York City (Tier 1 US)</option>
+              <option value="in_blr">🇮🇳 Bangalore / India Tech Hub</option>
+              <option value="uk_london">🇬🇧 London, UK (Tier 1 Europe)</option>
+              <option value="remote">🌐 Remote / Global Standard</option>
+            </select>
+          </div>
+
+          <div class="salary-bands-grid margin-top-16">
+            <div class="salary-box usd-box">
+              <span class="currency-tag">ESTIMATED GLOBAL USD ($)</span>
+              <h3 id="salary-usd-val">$0 - $0 / yr</h3>
+            </div>
+            <div class="salary-box inr-box">
+              <span class="currency-tag">ESTIMATED INDIA INR (₹)</span>
+              <h3 id="salary-inr-val">₹0 - ₹0 LPA</h3>
+            </div>
+          </div>
+
+          <div class="salary-details-card margin-top-16">
+            <div class="salary-meta-row">
+              <span class="meta-tag" id="salary-seniority-tier">Seniority: Mid Level</span>
+              <span class="meta-tag" id="salary-demand-tag">Market Demand: High</span>
+              <span class="meta-tag" id="salary-location-label">Market: San Francisco</span>
+            </div>
+            <h4 class="margin-top-14">Highest Premium Skill Multipliers Detected</h4>
+            <div id="valuable-skills-list" class="chips-wrap margin-top-10"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 13: Visual Layout & Hierarchy -->
+      <div id="tab-visual" class="tab-content">
+        <div class="visual-header">
+          <p class="eyebrow">Design Aesthetic &amp; Computer Vision Grade</p>
+          <h3>Visual Layout &amp; Formatting Heatmap</h3>
+          <p class="section-sub">Converts PDF into high-res canvas view to grade visual hierarchy, whitespace balance, font legibility, and margin symmetry.</p>
+        </div>
+
+        <div class="visual-card">
+          <div class="visual-score-box">
+            <div class="visual-gauge">
+              <span id="visual-score-val" class="visual-score-num">--/100</span>
+              <span class="visual-gauge-lbl">LAYOUT DESIGN</span>
+            </div>
+            <div class="visual-meters">
+              <div class="meter-item">
+                <span class="meter-lbl">Whitespace Balance:</span>
+                <strong id="whitespace-status">—</strong>
+              </div>
+              <div class="meter-item">
+                <span class="meter-lbl">Typography Legibility:</span>
+                <strong id="typography-status">—</strong>
+              </div>
+              <div class="meter-item">
+                <span class="meter-lbl">Section Hierarchy Contrast:</span>
+                <strong id="hierarchy-status">—</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Document Render Canvas & Heatmap Zone -->
+          <div class="pdf-canvas-container margin-top-20">
+            <h4>📄 PDF High-Res Visual Canvas &amp; Eye-Tracking Overlay</h4>
+            <p class="canvas-sub">Interactive visual layout canvas showing visual attention focal nodes, layout density, and margin bounds.</p>
+            
+            <div id="pdf-visual-wrapper" class="pdf-visual-wrapper">
+              <canvas id="pdf-visual-canvas" class="pdf-visual-canvas"></canvas>
+              <div id="pdf-heatmap-overlay" class="pdf-heatmap-overlay"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 8: Skill Upgrade & Course Recommendations -->
+      <div id="tab-courses" class="tab-content">
+        <div class="courses-header">
+          <p class="eyebrow">Direct Interest Deep-Links</p>
+          <h3>Targeted Courses to Work On Right Now</h3>
+          <p class="section-sub">These specific, interest-tailored course deep-links launch direct searches on Coursera, Udemy, LinkedIn Learning, and Unstop for your missing and primary skills.</p>
+        </div>
+
+        <div class="elevation-roadmap-card">
+          <h4>🚀 4-Step Checklist to Raise Your Score to Grade A (90+)</h4>
+          <div id="elevation-steps-list" class="elevation-steps-list"></div>
+        </div>
+
+        <div id="courses-grid" class="courses-grid"></div>
+      </div>
+
+      <!-- Tab 7: Job Match & Hiring Portals -->
+      <div id="tab-jobs" class="tab-content">
+        <div class="jobs-header">
+          <p class="eyebrow">Hiring Portals &amp; Direct Openings</p>
+          <h3>Tailored Job Matches (LinkedIn, Unstop, Naukri, Indeed)</h3>
+          <p class="section-sub">Based on your resume's grade and detected skills, here are pre-filtered job search gateways on top hiring platforms.</p>
+        </div>
+
+        <div id="jobs-grid" class="jobs-grid"></div>
+      </div>
+
+      <!-- Tab 2: Job Description Match -->
+      <div id="tab-jd-match" class="tab-content">
+        <div class="jd-section">
+          <div class="jd-input-card">
+            <h3>Target Job Description Analysis</h3>
+            <p class="section-sub">Paste the job description below to calculate ATS match percentage, missing hard/soft skills, and keyword gaps.</p>
+            <textarea id="jd-input" placeholder="Paste target Job Description here (e.g., Senior Full Stack Engineer requirements...)" rows="5"></textarea>
+            <button id="match-jd-btn" class="secondary-btn">Calculate JD Match &amp; Gap Analysis</button>
+          </div>
+
+          <div id="jd-loading" class="loading hidden">
+            <div class="pen-spinner"></div>
+            <p>Matching resume keywords against job requirements…</p>
+          </div>
+
+          <div id="jd-results" class="jd-results-card hidden">
+            <div class="match-score-header">
+              <div class="match-gauge">
+                <span class="gauge-value" id="jd-match-pct">0%</span>
+                <span class="gauge-label">ROLE MATCH</span>
+              </div>
+              <div class="match-summary">
+                <h3 id="jd-match-title">Match Analysis</h3>
+                <p id="jd-match-summary">—</p>
+              </div>
+            </div>
+
+            <div class="skills-grid">
+              <div class="skills-card matched-card">
+                <h4>✓ Matched Technical Skills</h4>
+                <div id="matched-skills-list" class="chips-wrap"></div>
+              </div>
+
+              <div class="skills-card missing-card">
+                <h4>⚠️ Missing Skills &amp; Gaps</h4>
+                <div id="missing-skills-list" class="chips-wrap"></div>
+              </div>
+            </div>
+
+            <div class="recommended-keywords-box">
+              <h4>💡 Recommended Keywords to Integrate</h4>
+              <div id="recommended-keywords-list" class="chips-wrap"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Recruiter Heatmap Visualizer -->
+      <div id="tab-heatmap" class="tab-content">
+        <div class="heatmap-header">
+          <p class="eyebrow">Visual Eye-Tracking Simulation</p>
+          <h3>6-Second Recruiter Skim Heatmap</h3>
+          <p class="section-sub">Recruiters spend an average of 6 seconds skimming a resume. This simulation highlights where their gaze lands first based on visual hierarchy, metrics, headers, and action terms.</p>
+        </div>
+
+        <div class="heatmap-container">
+          <div class="heatmap-preview-card" id="heatmap-document-view">
+            <div class="heatmap-overlay-legend">
+              <span class="legend-item leg-high">🔴 High Focus (Metrics &amp; Prime Real Estate)</span>
+              <span class="legend-item leg-med">🟠 Medium Focus (Action Verbs &amp; Titles)</span>
+              <span class="legend-item leg-low">🟡 Low Focus (Standard Text)</span>
+            </div>
+            <div id="heatmap-nodes-list" class="heatmap-nodes-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: AI Resume Tailor -->
+      <div id="tab-tailor" class="tab-content">
+        <div class="tailor-header">
+          <p class="eyebrow">Interactive Rewriter</p>
+          <h3>AI Bullet Point Tailor &amp; Booster</h3>
+          <p class="section-sub">Paste any weak bullet point below to generate 3 high-impact, quantified variations.</p>
+        </div>
+
+        <div class="tailor-input-box">
+          <textarea id="tailor-bullet-input" placeholder="e.g. Responsible for managing a team and handling project deadlines..." rows="3"></textarea>
+          <button id="tailor-btn" class="secondary-btn">Generate Tailored Bullet Variations</button>
+        </div>
+
+        <div id="tailor-results" class="tailor-results-grid hidden"></div>
+      </div>
+
+      <!-- Tab 6: ATS Raw Text & Privacy -->
+      <div id="tab-ats-raw" class="tab-content">
+        <div class="ats-header">
+          <p class="eyebrow">ATS Parser Inspection</p>
+          <h3>Raw ATS Plain-Text Stream</h3>
+          <p class="section-sub">This is the exact raw text stream an Applicant Tracking System reads when parsing your PDF/DOCX. Check for scrambled words or lost formatting.</p>
+          <button id="pii-toggle-btn" class="pii-btn">🔒 Toggle PII Redactor (Mask Name/Email/Phone)</button>
+        </div>
+
+        <div class="raw-text-card">
+          <pre id="ats-raw-text-view" class="raw-text-view"></pre>
+        </div>
+      </div>
+
+      <div class="dashboard-footer-actions">
+        <button id="reset-btn" class="reset-btn">Mark up another resume</button>
+      </div>
+
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Built for a 5-hour hackathon sprint — heuristic &amp; AI analysis, runs fully offline &amp; cloud synced.</p>
+  </footer>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
